@@ -45,12 +45,12 @@ namespace Obfuz.ObfusPasses.SymbolObfus.NameMakers
             _wordSet = wordSet;
             _nextIndex = 0;
             _random = seed != 0 ? new System.Random(seed) : null;
-            int space = 1;
+            long space = 1;
             for (int i = 0; i < 4; i++)
             {
                 space *= wordSet.Count;
             }
-            _nameSpace = space;
+            _nameSpace = (int)System.Math.Min(space, int.MaxValue);
         }
 
         protected override void BuildNewName(StringBuilder nameBuilder, string originalName, string lastName)

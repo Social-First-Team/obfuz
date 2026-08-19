@@ -1,4 +1,4 @@
-// Copyright 2025 Code Philosophy
+﻿// Copyright 2025 Code Philosophy
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -120,16 +120,29 @@ namespace Obfuz.ObfusPasses.SymbolObfus
         private readonly Dictionary<VirtualMethodGroup, RenameRecord> _virtualMethodGroups = new Dictionary<VirtualMethodGroup, RenameRecord>();
 
 
+        private readonly bool _reusePreviousNames;
+
         public RenameRecordMap(string mappingFile, bool debug, bool keepUnknownSymbolInSymbolMappingFile)
+            : this(mappingFile, debug, keepUnknownSymbolInSymbolMappingFile, true)
+        {
+        }
+
+        public RenameRecordMap(string mappingFile, bool debug, bool keepUnknownSymbolInSymbolMappingFile, bool reusePreviousNames)
         {
             _mappingFile = mappingFile;
             _debug = debug;
             _keepUnknownSymbolInSymbolMappingFile = keepUnknownSymbolInSymbolMappingFile;
+            _reusePreviousNames = reusePreviousNames;
         }
 
         public void Init(List<ModuleDef> assemblies, INameMaker nameMaker)
         {
-            LoadXmlMappingFile(_mappingFile);
+            // With a randomised name seed, reusing the previous build's mapping would hand every
+            // pre-existing symbol its old name back and silently undo the randomisation.
+            if (_reusePreviousNames)
+            {
+                LoadXmlMappingFile(_mappingFile);
+            }
             foreach (ModuleDef mod in assemblies)
             {
                 string name = mod.Assembly.Name;
