@@ -1,4 +1,4 @@
-// Copyright 2025 Code Philosophy
+﻿// Copyright 2025 Code Philosophy
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +34,7 @@ namespace Obfuz.Settings
         public bool detectReflectionCompatibility;
         public bool keepUnknownSymbolInSymbolMappingFile;
         public string symbolMappingFile;
+        public int nameRandomSeed;
         public List<string> ruleFiles;
         public List<Type> customRenamePolicyTypes;
     }
@@ -57,6 +58,9 @@ namespace Obfuz.Settings
 
         [Tooltip("symbol mapping file path")]
         public string symbolMappingFile = "Assets/Obfuz/SymbolObfus/symbol-mapping.xml";
+
+        [Tooltip("random seed for generated names. 0 keeps the original deterministic sequence; any other value randomises which name each symbol gets, so the mapping differs between builds")]
+        public int nameRandomSeed = 0;
 
         [Tooltip("debug symbol mapping file path, used for debugging purposes")]
         public string debugSymbolMappingFile = "Assets/Obfuz/SymbolObfus/symbol-mapping-debug.xml";
@@ -82,6 +86,7 @@ namespace Obfuz.Settings
                 detectReflectionCompatibility = detectReflectionCompatibility,
                 keepUnknownSymbolInSymbolMappingFile = keepUnknownSymbolInSymbolMappingFile,
                 symbolMappingFile = GetSymbolMappingFile(),
+                nameRandomSeed = nameRandomSeed,
                 ruleFiles = ruleFiles?.ToList() ?? new List<string>(),
                 customRenamePolicyTypes = customRenamePolicyTypes?.Select(typeName => ReflectionUtil.FindUniqueTypeInCurrentAppDomain(typeName)).ToList() ?? new List<Type>(),
             };

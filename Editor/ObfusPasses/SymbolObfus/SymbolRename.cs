@@ -1,4 +1,4 @@
-// Copyright 2025 Code Philosophy
+﻿// Copyright 2025 Code Philosophy
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -66,7 +66,7 @@ namespace Obfuz.ObfusPasses.SymbolObfus
             _obfuscationRuleFiles = settings.ruleFiles.ToList();
             _renameRecordMap = new RenameRecordMap(settings.symbolMappingFile, settings.debug, settings.keepUnknownSymbolInSymbolMappingFile);
             _virtualMethodGroupCalculator = new VirtualMethodGroupCalculator();
-            _nameMaker = settings.debug ? NameMakerFactory.CreateDebugNameMaker() : NameMakerFactory.CreateNameMakerBaseASCIICharSet(settings.obfuscatedNamePrefix);
+            _nameMaker = settings.debug ? NameMakerFactory.CreateDebugNameMaker() : NameMakerFactory.CreateNameMakerBaseASCIICharSet(settings.obfuscatedNamePrefix, settings.nameRandomSeed);
             _customPolicyTypes = settings.customRenamePolicyTypes;
         }
 

@@ -1,4 +1,4 @@
-// Copyright 2025 Code Philosophy
+﻿// Copyright 2025 Code Philosophy
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,16 +27,30 @@ namespace Obfuz.ObfusPasses.SymbolObfus.NameMakers
     {
         private readonly string _namePrefix;
         private readonly List<string> _wordSet;
+        private readonly int _seed;
+        private int _scopeIndex;
 
-        public WordSetNameMaker(string namePrefix, List<string> wordSet)
+        public WordSetNameMaker(string namePrefix, List<string> wordSet) : this(namePrefix, wordSet, 0)
+        {
+        }
+
+        public WordSetNameMaker(string namePrefix, List<string> wordSet, int seed)
         {
             _namePrefix = namePrefix;
             _wordSet = wordSet;
+            _seed = seed;
         }
 
         protected override INameScope CreateNameScope()
         {
-            return new NameScope(_namePrefix, _wordSet);
+            if (_seed == 0)
+            {
+                return new NameScope(_namePrefix, _wordSet);
+            }
+
+            // Distinct per scope, otherwise every scope would emit the same sequence.
+            int scopeSeed = unchecked(_seed + _scopeIndex++ * (int)0x9E3779B9);
+            return new NameScope(_namePrefix, _wordSet, scopeSeed != 0 ? scopeSeed : 1);
         }
     }
 }

@@ -1,4 +1,4 @@
-// Copyright 2025 Code Philosophy
+﻿// Copyright 2025 Code Philosophy
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,19 +28,35 @@ namespace Obfuz.ObfusPasses.SymbolObfus.NameMakers
     {
         private readonly string _namePrefix;
         private readonly List<string> _wordSet;
+        private readonly System.Random _random;
+        private readonly int _nameSpace;
         private int _nextIndex;
 
-        public NameScope(string namePrefix, List<string> wordSet)
+        public NameScope(string namePrefix, List<string> wordSet) : this(namePrefix, wordSet, 0)
+        {
+        }
+
+        // A zero seed keeps the original deterministic base-N counter. Any other seed draws
+        // names at random from a space wide enough that collisions are rare; NameScopeBase
+        // retries on collision, so correctness does not depend on the space being large.
+        public NameScope(string namePrefix, List<string> wordSet, int seed)
         {
             _namePrefix = namePrefix;
             _wordSet = wordSet;
             _nextIndex = 0;
+            _random = seed != 0 ? new System.Random(seed) : null;
+            int space = 1;
+            for (int i = 0; i < 4; i++)
+            {
+                space *= wordSet.Count;
+            }
+            _nameSpace = space;
         }
 
         protected override void BuildNewName(StringBuilder nameBuilder, string originalName, string lastName)
         {
             nameBuilder.Append(_namePrefix);
-            for (int i = _nextIndex++; ;)
+            for (int i = _random != null ? _random.Next(_nameSpace) : _nextIndex++; ;)
             {
                 nameBuilder.Append(_wordSet[i % _wordSet.Count]);
                 i = i / _wordSet.Count;

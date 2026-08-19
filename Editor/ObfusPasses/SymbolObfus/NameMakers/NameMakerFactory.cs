@@ -1,4 +1,4 @@
-// Copyright 2025 Code Philosophy
+﻿// Copyright 2025 Code Philosophy
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,13 +31,18 @@ namespace Obfuz.ObfusPasses.SymbolObfus.NameMakers
 
         public static INameMaker CreateNameMakerBaseASCIICharSet(string namePrefix)
         {
+            return CreateNameMakerBaseASCIICharSet(namePrefix, 0);
+        }
+
+        public static INameMaker CreateNameMakerBaseASCIICharSet(string namePrefix, int seed)
+        {
             var words = new List<string>();
             for (int i = 0; i < 26; i++)
             {
                 words.Add(((char)('a' + i)).ToString());
                 words.Add(((char)('A' + i)).ToString());
             }
-            return new WordSetNameMaker(namePrefix, words);
+            return new WordSetNameMaker(namePrefix, words, seed);
         }
     }
 }
