@@ -88,7 +88,13 @@ static class Program
         var before = Snapshot(Load(dll));
 
         var mod1 = Load(dll);
+        mod1.EnableTypeDefFindCache = true;
+        var primed = mod1.Find("Fx.Plain01", false);
+        var primedEnumerator = mod1.GetTypes().GetEnumerator();
+        primedEnumerator.MoveNext();
         new MemberReorder(1234, new AllowAll()).Process(new List<ModuleDef> { mod1 });
+        Check(primed != null && mod1.Find("Fx.Plain01", false) != null
+            && mod1.Find("Fx2.PlainHost", false) != null, "TypeDef find cache still resolves after reordering");
         var after1 = Snapshot(mod1);
 
         var mod2 = Load(dll);

@@ -67,6 +67,7 @@ namespace Obfuz.ObfusPasses.SymbolObfus
                     Reorder(type.Properties, p => !_renamePolicy.NeedRename(p));
                     Reorder(type.Events, e => !_renamePolicy.NeedRename(e));
                 }
+                mod.ResetTypeDefFindCache();
             }
         }
 
