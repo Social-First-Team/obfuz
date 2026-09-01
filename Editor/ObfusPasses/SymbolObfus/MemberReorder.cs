@@ -87,8 +87,12 @@ namespace Obfuz.ObfusPasses.SymbolObfus
             return !_renamePolicy.NeedRename(method);
         }
 
-        private static bool MayReorderFields(TypeDef type)
+        private bool MayReorderFields(TypeDef type)
         {
+            if (!_renamePolicy.NeedRename(type))
+            {
+                return false;
+            }
             if (type.IsEnum || type.IsValueType)
             {
                 return false;
