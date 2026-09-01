@@ -35,6 +35,7 @@ namespace Obfuz.Settings
         public bool keepUnknownSymbolInSymbolMappingFile;
         public string symbolMappingFile;
         public int nameRandomSeed;
+        public bool enableMemberReordering;
         public List<string> ruleFiles;
         public List<Type> customRenamePolicyTypes;
     }
@@ -62,6 +63,9 @@ namespace Obfuz.Settings
         [Tooltip("random seed for generated names. 0 keeps the original deterministic sequence; any other value randomises which name each symbol gets, so the mapping differs between builds")]
         public int nameRandomSeed = 0;
 
+        [Tooltip("shuffle the declaration order of types and members, seeded from nameRandomSeed, so a positional diff of two builds cannot align them. Requires a non-zero nameRandomSeed")]
+        public bool enableMemberReordering = false;
+
         [Tooltip("debug symbol mapping file path, used for debugging purposes")]
         public string debugSymbolMappingFile = "Assets/Obfuz/SymbolObfus/symbol-mapping-debug.xml";
 
@@ -87,6 +91,7 @@ namespace Obfuz.Settings
                 keepUnknownSymbolInSymbolMappingFile = keepUnknownSymbolInSymbolMappingFile,
                 symbolMappingFile = GetSymbolMappingFile(),
                 nameRandomSeed = nameRandomSeed,
+                enableMemberReordering = enableMemberReordering,
                 ruleFiles = ruleFiles?.ToList() ?? new List<string>(),
                 customRenamePolicyTypes = customRenamePolicyTypes?.Select(typeName => ReflectionUtil.FindUniqueTypeInCurrentAppDomain(typeName)).ToList() ?? new List<Type>(),
             };

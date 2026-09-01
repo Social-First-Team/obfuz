@@ -51,6 +51,8 @@ namespace Obfuz.ObfusPasses.SymbolObfus
         private readonly VirtualMethodGroupCalculator _virtualMethodGroupCalculator;
         private readonly List<MethodDef> _virtualMethods = new List<MethodDef>();
         private readonly List<Type> _customPolicyTypes;
+        private readonly bool _enableMemberReordering;
+        private readonly int _nameRandomSeed;
 
         class CustomAttributeInfo
         {
@@ -69,6 +71,8 @@ namespace Obfuz.ObfusPasses.SymbolObfus
             _virtualMethodGroupCalculator = new VirtualMethodGroupCalculator();
             _nameMaker = settings.debug ? NameMakerFactory.CreateDebugNameMaker() : NameMakerFactory.CreateNameMakerBaseASCIICharSet(settings.obfuscatedNamePrefix, settings.nameRandomSeed);
             _customPolicyTypes = settings.customRenamePolicyTypes;
+            _enableMemberReordering = settings.enableMemberReordering;
+            _nameRandomSeed = settings.nameRandomSeed;
         }
 
         public void Init()
@@ -205,6 +209,10 @@ namespace Obfuz.ObfusPasses.SymbolObfus
 
         public void Process()
         {
+            if (_enableMemberReordering)
+            {
+                new MemberReorder(_nameRandomSeed, _renamePolicy).Process(_toObfuscatedModules);
+            }
             _renameRecordMap.Init(_toObfuscatedModules, _nameMaker);
             BuildVirtualMethodGroup();
             RenameTypes();
