@@ -48,7 +48,6 @@ namespace Obfuz.ObfusPasses.SymbolObfus
                 Reorder(mod.Types, t => t.IsGlobalModuleType || IsPositionPinnedType(t));
                 foreach (TypeDef type in mod.GetTypes().ToList())
                 {
-                    Reorder(type.NestedTypes, IsPositionPinnedType);
                     if (MayReorderFields(type))
                     {
                         Reorder(type.Fields, f => !_renamePolicy.NeedRename(f));
