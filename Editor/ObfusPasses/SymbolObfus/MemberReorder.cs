@@ -30,6 +30,7 @@ namespace Obfuz.ObfusPasses.SymbolObfus
     {
         private readonly Random _random;
         private readonly IObfuscationPolicy _renamePolicy;
+        private readonly HashSet<TypeDef> _serializedLayoutBases = new HashSet<TypeDef>();
 
         public MemberReorder(int seed, IObfuscationPolicy renamePolicy)
         {
@@ -45,6 +46,16 @@ namespace Obfuz.ObfusPasses.SymbolObfus
         {
             foreach (ModuleDef mod in modules)
             {
+                foreach (TypeDef type in mod.GetTypes())
+                {
+                    if (type.IsSerializable)
+                    {
+                        PinBaseLayout(type);
+                    }
+                }
+            }
+            foreach (ModuleDef mod in modules)
+            {
                 Reorder(mod.Types, t => t.IsGlobalModuleType || IsPositionPinnedType(t));
                 foreach (TypeDef type in mod.GetTypes().ToList())
                 {
@@ -56,6 +67,20 @@ namespace Obfuz.ObfusPasses.SymbolObfus
                     Reorder(type.Properties, p => !_renamePolicy.NeedRename(p));
                     Reorder(type.Events, e => !_renamePolicy.NeedRename(e));
                 }
+            }
+        }
+
+        private void PinBaseLayout(TypeDef type)
+        {
+            for (ITypeDefOrRef baseType = type.BaseType; baseType != null; )
+            {
+                TypeDef baseTypeDef = baseType.ResolveTypeDef()
+                    ?? (baseType as TypeSpec)?.TypeSig.ToGenericInstSig()?.GenericType?.TypeDefOrRef?.ResolveTypeDef();
+                if (baseTypeDef == null || !_serializedLayoutBases.Add(baseTypeDef))
+                {
+                    return;
+                }
+                baseType = baseTypeDef.BaseType;
             }
         }
 
@@ -89,7 +114,7 @@ namespace Obfuz.ObfusPasses.SymbolObfus
 
         private bool MayReorderFields(TypeDef type)
         {
-            if (!_renamePolicy.NeedRename(type))
+            if (!_renamePolicy.NeedRename(type) || _serializedLayoutBases.Contains(type))
             {
                 return false;
             }
