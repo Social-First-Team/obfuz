@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net7.0</TargetFramework>
+    <AssemblyName>align</AssemblyName>
+    <LangVersion>latest</LangVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="dnlib"><HintPath>../../Plugins/dnlib.dll</HintPath></Reference>
+  </ItemGroup>
+  <ItemGroup><Compile Include="Align.cs" /></ItemGroup>
+</Project>
