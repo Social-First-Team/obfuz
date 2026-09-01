@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>fixture</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup><ProjectReference Include="../unitystub/unitystub.csproj" /></ItemGroup>
+</Project>

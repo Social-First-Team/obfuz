@@ -1,0 +1,4 @@
+bin/
+obj/
+reordered.dll
+UnityEngine.CoreModule.dll
