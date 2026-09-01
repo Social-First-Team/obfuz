@@ -65,7 +65,13 @@ namespace Obfuz.ObfusPasses.SymbolObfus
             {
                 return true;
             }
-            return type.Methods.Any(MetaUtil.HasRuntimeInitializeOnLoadMethodAttribute);
+            return HasRuntimeInitializeOnLoadMethod(type);
+        }
+
+        private static bool HasRuntimeInitializeOnLoadMethod(TypeDef type)
+        {
+            return type.Methods.Any(MetaUtil.HasRuntimeInitializeOnLoadMethodAttribute)
+                || type.NestedTypes.Any(HasRuntimeInitializeOnLoadMethod);
         }
 
         private bool IsPositionPinnedMethod(MethodDef method)
