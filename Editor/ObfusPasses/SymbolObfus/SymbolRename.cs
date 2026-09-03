@@ -211,14 +211,9 @@ namespace Obfuz.ObfusPasses.SymbolObfus
         {
             if (_enableMemberReordering)
             {
-                if (_nameRandomSeed == 0)
-                {
-                    Debug.LogWarning("[MemberReorder] skipped because nameRandomSeed is 0. The shuffle would be identical in every build, which is worse than not shuffling at all. Set a non-zero SymbolObfuscationSettings.nameRandomSeed to enable it.");
-                }
-                else
-                {
-                    new MemberReorder(_nameRandomSeed, _renamePolicy).Process(_toObfuscatedModules);
-                }
+                int reorderSeed = _nameRandomSeed != 0 ? _nameRandomSeed : (Guid.NewGuid().GetHashCode() | 1);
+                Debug.Log($"[MemberReorder] reordering members with seed {reorderSeed}.");
+                new MemberReorder(reorderSeed, _renamePolicy).Process(_toObfuscatedModules);
             }
             _renameRecordMap.Init(_toObfuscatedModules, _nameMaker);
             BuildVirtualMethodGroup();
