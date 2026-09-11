@@ -129,13 +129,14 @@ namespace Obfuz.ObfusPasses.ConstEncrypt
                 {
                     if (((IMethod)inst.Operand).FullName == "System.Void System.Runtime.CompilerServices.RuntimeHelpers::InitializeArray(System.Array,System.RuntimeFieldHandle)")
                     {
-                        // InitializeArray also initialises multidimensional arrays, but
-                        // DecryptInitializeArray copies with Buffer.BlockCopy and then type-tests
-                        // `arr is T[]`; neither handles rank > 1. The copy throws "Object must be
-                        // an array of primitives." at type-initialisation time, and even if it did
-                        // not, no branch would match so the data would stay encrypted. Leave those
-                        // sites to the runtime.
-                        if (IsMultiDimensionalArrayInit(globalInstructions, instructionIndex))
+                        // InitializeArray covers far more than DecryptInitializeArray can handle.
+                        // The latter copies with Buffer.BlockCopy and then type-tests `arr is T[]`
+                        // over ten primitive element types. Multidimensional arrays, enum arrays,
+                        // bool[] and char[] all reach it: BlockCopy throws "Object must be an array
+                        // of primitives." at type-initialisation time, and where it does not throw
+                        // no branch matches and the payload is left encrypted. Leave anything it
+                        // cannot handle to the runtime.
+                        if (!IsSupportedArrayInit(globalInstructions, instructionIndex))
                         {
                             return false;
                         }
@@ -168,22 +169,36 @@ namespace Obfuz.ObfusPasses.ConstEncrypt
         }
 
         /// <summary>
-        /// True when the array feeding this InitializeArray call was built by a multidimensional
-        /// array constructor rather than newarr.
+        /// The element types EncryptorBase.DecryptInitializeArray actually handles. Keep in step
+        /// with its `arr is T[]` chain.
         /// </summary>
-        private static bool IsMultiDimensionalArrayInit(IList<Instruction> instructions, int callIndex)
+        private static readonly HashSet<ElementType> s_decryptableArrayElements = new HashSet<ElementType>
+        {
+            ElementType.I1, ElementType.U1, ElementType.I2, ElementType.U2,
+            ElementType.I4, ElementType.U4, ElementType.I8, ElementType.U8,
+            ElementType.R4, ElementType.R8,
+        };
+
+        /// <summary>
+        /// True only when the array feeding this InitializeArray call is a single-dimensional
+        /// array of an element type DecryptInitializeArray can decrypt.
+        /// </summary>
+        private static bool IsSupportedArrayInit(IList<Instruction> instructions, int callIndex)
         {
             for (int i = callIndex - 1; i >= 0 && i >= callIndex - 8; i--)
             {
                 Instruction inst = instructions[i];
                 if (inst.OpCode.Code == Code.Newarr)
                 {
-                    return false;
+                    TypeSig elementType = (inst.Operand as ITypeDefOrRef)?.ToTypeSig().RemovePinnedAndModifiers();
+                    // an enum's ElementType is ValueType, not its underlying primitive, so this
+                    // correctly rejects enum arrays - which Buffer.BlockCopy refuses outright.
+                    return elementType != null && s_decryptableArrayElements.Contains(elementType.ElementType);
                 }
                 if (inst.OpCode.Code == Code.Newobj && inst.Operand is IMethod ctor && ctor.DeclaringType != null)
                 {
-                    ArraySig arraySig = ctor.DeclaringType.ToTypeSig().ToArraySig();
-                    return arraySig != null && arraySig.Rank > 1;
+                    // multidimensional array constructor
+                    return false;
                 }
             }
             return false;
