@@ -372,8 +372,15 @@ namespace Obfuz.ObfusPasses.ParamPad
                                 case Code.Call:
                                 case Code.Callvirt:
                                 {
+                                    // Rewriting a call site inserts instructions between the
+                                    // preceding instruction and the call. Upstream disabled the
+                                    // Watermark pass outright (67f3dd4) because doing that between
+                                    // an `ldtoken` and its consuming call makes il2cpp.exe fail, so
+                                    // leave those alone even though the target would be safe.
                                     Instruction prev = i > 0 ? instructions[i - 1] : null;
-                                    if (prev != null && (prev.OpCode.Code == Code.Constrained || prev.OpCode.Code == Code.Tailcall))
+                                    if (prev != null && (prev.OpCode.Code == Code.Constrained
+                                        || prev.OpCode.Code == Code.Tailcall
+                                        || prev.OpCode.Code == Code.Ldtoken))
                                     {
                                         vetoed.Add(target);
                                         break;
