@@ -290,90 +290,41 @@ namespace Obfuz
             }
         }
 
+        /// <summary>
+        /// Copies an encrypted blob into a freshly created array and decrypts it in place.
+        ///
+        /// The copy pins the destination and memcpys rather than using Buffer.BlockCopy, because
+        /// BlockCopy rejects any array whose element class is not primitive - an enum array is
+        /// IL2CPP_TYPE_VALUETYPE, so it throws "Object must be an array of primitives." at type
+        /// initialisation time. RuntimeHelpers.InitializeArray, which this replaces, accepts enum
+        /// and multidimensional arrays, so refusing them here silently broke every C# array
+        /// initialiser with an enum element type.
+        /// </summary>
         public virtual unsafe void DecryptInitializeArray(System.Array arr, byte[] data, int offset, int length, int ops, int salt)
         {
-            Buffer.BlockCopy(data, offset, arr, 0, length);
-            if (arr is byte[] byteArr)
+            if (length <= 0)
             {
-                fixed (byte* dataPtr = &byteArr[0])
-                {
-                    DecryptBlock(dataPtr, length, ops, salt);
-                }
+                return;
             }
-            else if (arr is int[] intArr)
+            void* dataPtr = UnsafeUtility.PinGCArrayAndGetDataAddress(arr, out ulong handle);
+            try
             {
-                fixed (int* dataPtr = &intArr[0])
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                // BlockCopy used to bounds check for us. Roslyn always sizes the blob to the array,
+                // so a mismatch means the obfuscator emitted the wrong length, not bad user input.
+                int arrayBytes = UnsafeUtility.SizeOf(arr.GetType().GetElementType()) * arr.Length;
+                Assert.IsTrue(arrayBytes >= length,
+                    $"DecryptInitializeArray: {length} bytes into an array holding {arrayBytes}");
+#endif
+                fixed (byte* srcPtr = &data[offset])
                 {
-                    DecryptBlock((byte*)dataPtr, length, ops, salt);
+                    UnsafeUtility.MemCpy(dataPtr, srcPtr, length);
                 }
+                DecryptBlock((byte*)dataPtr, length, ops, salt);
             }
-            else if (arr is long[] longArr)
+            finally
             {
-                fixed (long* dataPtr = &longArr[0])
-                {
-                    DecryptBlock((byte*)dataPtr, length, ops, salt);
-                }
-            }
-            else if (arr is sbyte[] sbyteArr)
-            {
-                fixed (sbyte* dataPtr = &sbyteArr[0])
-                {
-                    DecryptBlock((byte*)dataPtr, length, ops, salt);
-                }
-            }
-            else if (arr is short[] shortArr)
-            {
-                fixed (short* dataPtr = &shortArr[0])
-                {
-                    DecryptBlock((byte*)dataPtr, length, ops, salt);
-                }
-            }
-            else if (arr is ushort[] ushortArr)
-            {
-                fixed (ushort* dataPtr = &ushortArr[0])
-                {
-                    DecryptBlock((byte*)dataPtr, length, ops, salt);
-                }
-            }
-            else if (arr is uint[] uintArr)
-            {
-                fixed (uint* dataPtr = &uintArr[0])
-                {
-                    DecryptBlock((byte*)dataPtr, length, ops, salt);
-                }
-            }
-            else if (arr is ulong[] ulongArr)
-            {
-                fixed (ulong* dataPtr = &ulongArr[0])
-                {
-                    DecryptBlock((byte*)dataPtr, length, ops, salt);
-                }
-            }
-            else if (arr is float[] floatArr)
-            {
-                fixed (float* dataPtr = &floatArr[0])
-                {
-                    DecryptBlock((byte*)dataPtr, length, ops, salt);
-                }
-            }
-            else if (arr is double[] doubleArr)
-            {
-                fixed (double* dataPtr = &doubleArr[0])
-                {
-                    DecryptBlock((byte*)dataPtr, length, ops, salt);
-                }
-            }
-            else
-            {
-                void* dataPtr = UnsafeUtility.PinGCArrayAndGetDataAddress(arr, out ulong handle);
-                try
-                {
-                    DecryptBlock((byte*)dataPtr, length, ops, salt);
-                }
-                finally
-                {
-                    UnsafeUtility.ReleaseGCObject(handle);
-                }
+                UnsafeUtility.ReleaseGCObject(handle);
             }
         }
     }
