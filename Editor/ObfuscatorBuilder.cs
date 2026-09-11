@@ -248,10 +248,10 @@ namespace Obfuz
             {
                 builder.AddPass(new ControlFlowObfusPass(settings.controlFlowObfusSettings.ToFacade()));
             }
-            if (obfuscationPasses.HasFlag(ObfuscationPassType.WaterMark))
-            {
-                builder.AddPass(new WatermarkPass(settings.watermarkSettings.ToFacade()));
-            }
+            // if (obfuscationPasses.HasFlag(ObfuscationPassType.WaterMark))
+            // {
+            //     builder.AddPass(new WatermarkPass(settings.watermarkSettings.ToFacade()));
+            // }
             // Registered last on purpose: it works in Stop(), which runs in registration order, so
             // it must come after CallObfus to see the dispatch proxy bodies. See ParamPadPass.Stop.
             if (obfuscationPasses.HasFlag(ObfuscationPassType.ParamPad))
