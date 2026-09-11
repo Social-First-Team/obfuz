@@ -256,7 +256,7 @@ namespace Obfuz
             // it must come after CallObfus to see the dispatch proxy bodies. See ParamPadPass.Stop.
             if (obfuscationPasses.HasFlag(ObfuscationPassType.ParamPad))
             {
-                builder.AddPass(new ParamPadPass(settings.paramPadSettings.ToFacade()));
+                builder.AddPass(new ParamPadPass(settings.paramPadSettings.ToFacade(settings.symbolObfusSettings)));
             }
             if (obfuscationPasses.HasFlag(ObfuscationPassType.SymbolObfus))
             {

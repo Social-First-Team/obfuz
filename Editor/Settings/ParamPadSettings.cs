@@ -49,13 +49,15 @@ namespace Obfuz.Settings
         [Range(1, 20)]
         public int maxCount = 10;
 
-        [Tooltip("a method is only padded if it is also safe to rename, so these are the symbol obfuscation rule files")]
-        public string[] ruleFiles;
-
-        [Tooltip("custom rename policy types, same contract as SymbolObfuscationSettings.customRenamePolicyTypes")]
-        public string[] customRenamePolicyTypes;
-
-        public ParamPadSettingsFacade ToFacade()
+        /// <summary>
+        /// The rename policy configuration is deliberately NOT duplicated here. A method is padded
+        /// only where it is safe to rename, so the policy must be built from exactly the same rule
+        /// files and custom policies as renaming. Giving this pass its own copy meant an empty
+        /// default silently produced a WEAKER predicate than renaming: on a real project that
+        /// padded 1641 methods whose names are bound from scene/prefab YAML, breaking every
+        /// UnityEvent handler. Scope this pass with obfuscationPassSettings.ruleFiles instead.
+        /// </summary>
+        public ParamPadSettingsFacade ToFacade(SymbolObfuscationSettings symbolObfusSettings)
         {
             return new ParamPadSettingsFacade
             {
@@ -64,8 +66,8 @@ namespace Obfuz.Settings
                 // the transform rejects; clamp rather than fail the build
                 minCount = Math.Max(1, minCount),
                 maxCount = Math.Max(Math.Max(1, minCount), maxCount),
-                ruleFiles = ruleFiles?.ToList() ?? new List<string>(),
-                customRenamePolicyTypes = customRenamePolicyTypes?.Select(typeName => ReflectionUtil.FindUniqueTypeInCurrentAppDomain(typeName)).ToList() ?? new List<Type>(),
+                ruleFiles = symbolObfusSettings.ruleFiles?.ToList() ?? new List<string>(),
+                customRenamePolicyTypes = symbolObfusSettings.customRenamePolicyTypes?.Select(ReflectionUtil.FindUniqueTypeInCurrentAppDomain).ToList() ?? new List<Type>(),
             };
         }
     }
