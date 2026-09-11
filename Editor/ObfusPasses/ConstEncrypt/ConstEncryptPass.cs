@@ -129,6 +129,16 @@ namespace Obfuz.ObfusPasses.ConstEncrypt
                 {
                     if (((IMethod)inst.Operand).FullName == "System.Void System.Runtime.CompilerServices.RuntimeHelpers::InitializeArray(System.Array,System.RuntimeFieldHandle)")
                     {
+                        // InitializeArray also initialises multidimensional arrays, but
+                        // DecryptInitializeArray copies with Buffer.BlockCopy and then type-tests
+                        // `arr is T[]`; neither handles rank > 1. The copy throws "Object must be
+                        // an array of primitives." at type-initialisation time, and even if it did
+                        // not, no branch would match so the data would stay encrypted. Leave those
+                        // sites to the runtime.
+                        if (IsMultiDimensionalArrayInit(globalInstructions, instructionIndex))
+                        {
+                            return false;
+                        }
                         Instruction prevInst = globalInstructions[instructionIndex - 1];
                         if (prevInst.OpCode.Code == Code.Ldtoken)
                         {
@@ -155,6 +165,28 @@ namespace Obfuz.ObfusPasses.ConstEncrypt
                 }
                 default: return false;
             }
+        }
+
+        /// <summary>
+        /// True when the array feeding this InitializeArray call was built by a multidimensional
+        /// array constructor rather than newarr.
+        /// </summary>
+        private static bool IsMultiDimensionalArrayInit(IList<Instruction> instructions, int callIndex)
+        {
+            for (int i = callIndex - 1; i >= 0 && i >= callIndex - 8; i--)
+            {
+                Instruction inst = instructions[i];
+                if (inst.OpCode.Code == Code.Newarr)
+                {
+                    return false;
+                }
+                if (inst.OpCode.Code == Code.Newobj && inst.Operand is IMethod ctor && ctor.DeclaringType != null)
+                {
+                    ArraySig arraySig = ctor.DeclaringType.ToTypeSig().ToArraySig();
+                    return arraySig != null && arraySig.Rank > 1;
+                }
+            }
+            return false;
         }
     }
 }
