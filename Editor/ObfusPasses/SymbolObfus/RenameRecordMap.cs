@@ -145,6 +145,13 @@ namespace Obfuz.ObfusPasses.SymbolObfus
             }
             foreach (ModuleDef mod in assemblies)
             {
+                foreach (TypeDef type in mod.GetTypes())
+                {
+                    nameMaker.AddPreservedName(type, type.Name);
+                }
+            }
+            foreach (ModuleDef mod in assemblies)
+            {
                 string name = mod.Assembly.Name;
 
                 RenameMappingAssembly rma = _assemblies.GetValueOrDefault(name);
@@ -160,15 +167,22 @@ namespace Obfuz.ObfusPasses.SymbolObfus
 
                 foreach (TypeDef type in mod.GetTypes())
                 {
-                    nameMaker.AddPreservedName(type, name);
                     nameMaker.AddPreservedNamespace(type, type.Namespace);
                     string fullTypeName = type.FullName;
                     RenameMappingType rmt = rma?.types.GetValueOrDefault(fullTypeName);
+                    RenameMappingType reusableRmt = null;
                     if (rmt != null && rmt.status == RenameStatus.Renamed)
                     {
                         var (newNamespace, newName) = MetaUtil.SplitNamespaceAndName(rmt.newFullName);
-                        nameMaker.AddPreservedNamespace(type, newNamespace);
-                        nameMaker.AddPreservedName(type, newName);
+                        if (nameMaker.AddPreservedName(type, newName))
+                        {
+                            nameMaker.AddPreservedNamespace(type, newNamespace);
+                            reusableRmt = rmt;
+                        }
+                        else
+                        {
+                            Debug.LogWarning($"symbol mapping file gives `{fullTypeName}` the name `{newName}`, which is already taken. Generating a new name for it.");
+                        }
                     }
 
                     _typeRenames.Add(type, new RenameRecord
@@ -177,7 +191,7 @@ namespace Obfuz.ObfusPasses.SymbolObfus
                         signature = fullTypeName,
                         oldName = fullTypeName,
                         newName = null,
-                        renameMappingData = rmt,
+                        renameMappingData = reusableRmt,
                     });
                     foreach (MethodDef method in type.Methods)
                     {
@@ -682,6 +696,11 @@ namespace Obfuz.ObfusPasses.SymbolObfus
             RenameRecord record = _eventRenames[eventDef];
             record.status = RenameStatus.Renamed;
             record.newName = newName;
+        }
+
+        public string GetOldFullName(TypeDef type)
+        {
+            return _typeRenames.TryGetValue(type, out var record) ? record.oldName : type.FullName;
         }
 
         public bool TryGetExistRenameMapping(TypeDef type, out string newNamespace, out string newName)

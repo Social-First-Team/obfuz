@@ -46,9 +46,9 @@ namespace Obfuz.ObfusPasses.SymbolObfus.NameMakers
             return nameScope;
         }
 
-        public void AddPreservedName(TypeDef typeDef, string name)
+        public bool AddPreservedName(TypeDef typeDef, string name)
         {
-            GetNameScope(_typeNameScope).AddPreservedName(name);
+            return GetNameScope(_typeNameScope).AddPreservedName(name);
         }
 
         public void AddPreservedName(MethodDef methodDef, string name)

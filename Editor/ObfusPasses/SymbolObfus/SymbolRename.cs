@@ -325,7 +325,28 @@ namespace Obfuz.ObfusPasses.SymbolObfus
 
             // clean cache
             _assemblyCache.EnableTypeDefCache = true;
+            VerifyTypeNamesAreUnique();
             //Debug.Log("Rename Types end");
+        }
+
+        private void VerifyTypeNamesAreUnique()
+        {
+            foreach (ModuleDef mod in _toObfuscatedModules)
+            {
+                var typesByNewName = new Dictionary<string, TypeDef>();
+                foreach (TypeDef type in mod.GetTypes())
+                {
+                    string newFullName = type.FullName;
+                    if (typesByNewName.TryGetValue(newFullName, out TypeDef other))
+                    {
+                        throw new Exception($"symbol obfuscation gave `{_renameRecordMap.GetOldFullName(other)}` and"
+                            + $" `{_renameRecordMap.GetOldFullName(type)}` the same name `{newFullName}` in {mod.Name}."
+                            + $" il2cpp cannot build that. The symbol mapping file `{_mappingXmlPath}` is the usual"
+                            + " source of a repeated name: delete it and rebuild.");
+                    }
+                    typesByNewName.Add(newFullName, type);
+                }
+            }
         }
 
 

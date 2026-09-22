@@ -24,7 +24,7 @@ namespace Obfuz.ObfusPasses.SymbolObfus
 {
     public interface INameMaker
     {
-        void AddPreservedName(TypeDef typeDef, string name);
+        bool AddPreservedName(TypeDef typeDef, string name);
 
         void AddPreservedNamespace(TypeDef typeDef, string name);
 
