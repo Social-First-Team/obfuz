@@ -28,6 +28,7 @@ namespace Obfuz.Settings
     public class ControlFlowObfuscationSettingsFacade
     {
         public int minInstructionCountOfBasicBlockToObfuscate;
+        public bool volatileDispatchIndex;
         public List<string> ruleFiles;
     }
 
@@ -35,6 +36,9 @@ namespace Obfuz.Settings
     public class ControlFlowObfuscationSettings
     {
         public int minInstructionCountOfBasicBlockToObfuscate = 3;
+
+        [Tooltip("Route the flattening dispatch index through a volatile field load so the native C++ optimizer (MSVC/clang) cannot constant-fold or jump-thread the switch back into direct branches. Keeps the flattening intact in the final IL2CPP native build, at the cost of a per-obfuscated-block memory barrier. Scope with minInstructionCountOfBasicBlockToObfuscate / rule files to limit the perf impact.")]
+        public bool volatileDispatchIndex = false;
 
         [Tooltip("rule config xml files")]
         public string[] ruleFiles;
@@ -44,6 +48,7 @@ namespace Obfuz.Settings
             return new ControlFlowObfuscationSettingsFacade
             {
                 minInstructionCountOfBasicBlockToObfuscate = minInstructionCountOfBasicBlockToObfuscate,
+                volatileDispatchIndex = volatileDispatchIndex,
                 ruleFiles = new List<string>(ruleFiles ?? Array.Empty<string>()),
             };
         }

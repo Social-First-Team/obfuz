@@ -35,6 +35,7 @@ namespace Obfuz.ObfusPasses.ControlFlowObfus
         public DefaultMetadataImporter importer;
         public ConstFieldAllocator constFieldAllocator;
         public int minInstructionCountOfBasicBlockToObfuscate;
+        public bool volatileDispatchIndex;
 
         public IRandom CreateRandom()
         {
@@ -93,6 +94,7 @@ namespace Obfuz.ObfusPasses.ControlFlowObfus
                 localRandom = localRandom,
                 importer = moduleEntityManager.GetEntity<DefaultMetadataImporter>(method.Module),
                 minInstructionCountOfBasicBlockToObfuscate = _settings.minInstructionCountOfBasicBlockToObfuscate,
+                volatileDispatchIndex = _settings.volatileDispatchIndex,
             };
             _obfuscator.Obfuscate(method, obfusMethodCtx);
         }

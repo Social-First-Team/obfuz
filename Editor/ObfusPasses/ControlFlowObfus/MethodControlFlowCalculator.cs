@@ -177,14 +177,16 @@ namespace Obfuz.ObfusPasses.ControlFlowObfus
         private readonly IRandom _random;
         private readonly ConstFieldAllocator _constFieldAllocator;
         private readonly int _minInstructionCountOfBasicBlockToObfuscate;
+        private readonly bool _volatileDispatchIndex;
         private readonly BasicBlockInfo _bbHead;
 
-        public MethodControlFlowCalculator(MethodDef method, IRandom random, ConstFieldAllocator constFieldAllocator, int minInstructionCountOfBasicBlockToObfuscate)
+        public MethodControlFlowCalculator(MethodDef method, IRandom random, ConstFieldAllocator constFieldAllocator, int minInstructionCountOfBasicBlockToObfuscate, bool volatileDispatchIndex)
         {
             _method = method;
             _random = random;
             _constFieldAllocator = constFieldAllocator;
             _minInstructionCountOfBasicBlockToObfuscate = minInstructionCountOfBasicBlockToObfuscate;
+            _volatileDispatchIndex = volatileDispatchIndex;
 
             _bbHead = new BasicBlockInfo()
             {
@@ -350,6 +352,10 @@ namespace Obfuz.ObfusPasses.ControlFlowObfus
             BlockGroup group = to.group;
             group.basicBlocks.Insert(group.basicBlocks.IndexOf(to), saveLocalBasicBlock);
             group.switchMachineCases.Add(new SwitchMachineCase { index = -1, prepareBlock = saveLocalBasicBlock, targetBlock = to });
+            // volatile. prefix (if enabled) must sit immediately before the Ldsfld so the
+            // Count-3 lookup in InsertSwitchMachineBasicBlockForGroup still lands on the Ldsfld.
+            if (_volatileDispatchIndex)
+                saveLocalBasicBlock.instructions.Add(Instruction.Create(OpCodes.Volatile));
             saveLocalBasicBlock.instructions.Add(Instruction.Create(OpCodes.Ldsfld, (FieldDef)null));
             saveLocalBasicBlock.instructions.Add(Instruction.Create(OpCodes.Stloc, GlobalSwitchIndexLocal));
             saveLocalBasicBlock.instructions.Add(Instruction.Create(OpCodes.Br, group.switchMachineEntryInst));
@@ -510,14 +516,16 @@ namespace Obfuz.ObfusPasses.ControlFlowObfus
                 Assert.IsTrue(firstCase.targetBlock.inputArgs.locals.Count == 0);
                 Assert.IsTrue(firstCase.targetBlock.inputStackDatas.Count == 0);
 
-                var instructions = new List<Instruction>()
-                    {
-                        Instruction.Create(OpCodes.Ldsfld, (FieldDef)null),
-                        Instruction.Create(OpCodes.Stloc, GlobalSwitchIndexLocal),
-                        group.switchMachineEntryInst,
-                        group.switchMachineInst,
-                        Instruction.Create(OpCodes.Br, firstCase.targetBlock.FirstInstruction),
-                    };
+                // volatile. prefix (if enabled) sits immediately before the dispatcher's index
+                // Ldsfld so the Count-5 lookup for loadFirstIndex below still lands on the Ldsfld.
+                var instructions = new List<Instruction>();
+                if (_volatileDispatchIndex)
+                    instructions.Add(Instruction.Create(OpCodes.Volatile));
+                instructions.Add(Instruction.Create(OpCodes.Ldsfld, (FieldDef)null));
+                instructions.Add(Instruction.Create(OpCodes.Stloc, GlobalSwitchIndexLocal));
+                instructions.Add(group.switchMachineEntryInst);
+                instructions.Add(group.switchMachineInst);
+                instructions.Add(Instruction.Create(OpCodes.Br, firstCase.targetBlock.FirstInstruction));
                 if (firstCase.prepareBlock != firstBlock || firstBlock.inputStackDatas.Count != 0)
                 {
                     instructions.Insert(0, Instruction.Create(OpCodes.Br, firstBlock.FirstInstruction));

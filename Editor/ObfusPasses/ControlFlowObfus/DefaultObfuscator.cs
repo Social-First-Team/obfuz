@@ -27,7 +27,7 @@ namespace Obfuz.ObfusPasses.ControlFlowObfus
         public override bool Obfuscate(MethodDef method, ObfusMethodContext ctx)
         {
             //Debug.Log($"Obfuscating method: {method.FullName} with ControlFlowObfusPass");
-            var mcfc = new MethodControlFlowCalculator(method, ctx.CreateRandom(), ctx.constFieldAllocator, ctx.minInstructionCountOfBasicBlockToObfuscate);
+            var mcfc = new MethodControlFlowCalculator(method, ctx.CreateRandom(), ctx.constFieldAllocator, ctx.minInstructionCountOfBasicBlockToObfuscate, ctx.volatileDispatchIndex);
             if (!mcfc.TryObfus())
             {
                 //Debug.LogWarning($"not obfuscate method: {method.FullName}");
